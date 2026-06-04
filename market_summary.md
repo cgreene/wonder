@@ -45,6 +45,26 @@ it is triangulated between a hard floor and a survey-based ceiling:
   (Grand View ~$22B, GMI ~$54B, M&M ~$71B). Cite ABI as the anchor with a range;
   avoid false precision (say "~$220B").
 
+## OhWow's own market (the number for the deck)
+
+The figures above are the **adoption TAM** — the wave OhWow rides, *not* the revenue it
+captures (OhWow sells researcher connection, not gen-AI). OhWow's own market is bottoms-up
+and grows in rings (the "Facebook started on one campus" arc):
+
+- **Beachhead — researchers (free).** ~**9M** researchers run R&D worldwide (UNESCO/UIS:
+  ~8.8M FTE researchers, 2018; ~14.3M incl. all R&D personnel) — the signal and the network. [UNESCO][unesco].
+- **Revenue now (SAM).** Institutions pay **$100 / researcher / yr** → **~$1B/yr** at ~9M
+  researchers. Sensitivity: $50 → ~$0.5B, $150 → ~$1.4B.
+- **Follow-on.** Connections graduate from Discord rooms to **real-world venues / events** —
+  revenue where the network meets in person.
+- **The prize (expansion).** As the wedge widens from researchers → everyone using AI for work
+  (~300M today → ~1B+ by 2030, per the TAM above), the verified, high-intent network becomes
+  **an advertising platform** (opt-in, aligned — *not* surveillance). At a ~$100 blended
+  seat/ARPU that expansion is **tens of $B** (~$30B+ at 300M).
+
+> Tension to own: the advertising thesis cuts against the product's privacy-first promise.
+> Frame ads as opt-in, aligned offers (tools, grants, roles) — never resale of the raw signal.
+
 ## Honesty caveats (defend the slide)
 
 1. **"Uses gen-AI for work" ≠ "has touched gen-AI."** Active/daily work use ~14–21%,
@@ -80,3 +100,4 @@ The floor proves the market is real; the growth rate sells the trajectory.
 - [abi] ABI Research — gen-AI software market $63B (2025) → ~$220B (2030): https://www.abiresearch.com/blog/generative-ai-software-market-report-summary
 - [prec] Precedence Research — gen-AI market $37.89B (2025), 36.97% CAGR: https://www.precedenceresearch.com/generative-ai
 - [nber] NBER w34255, "How People Use ChatGPT" (2025): https://www.nber.org/papers/w34255
+- [unesco] UNESCO/UIS via "How many people in the world do R&D?" (PMC) — ~8.8M FTE researchers (2018), ~14.3M R&D personnel: https://pmc.ncbi.nlm.nih.gov/articles/PMC10946615/
