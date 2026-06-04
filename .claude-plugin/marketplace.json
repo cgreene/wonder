@@ -1,0 +1,17 @@
+{
+  "name": "ohwow",
+  "owner": {
+    "name": "AI for Science Power Users gathering"
+  },
+  "metadata": {
+    "description": "OhWow — find the people wondering about the same thing you are."
+  },
+  "plugins": [
+    {
+      "name": "wonder",
+      "source": "./",
+      "description": "Run /wonder to turn your Claude session into sanitized keywords and get matched, via OhWow, into a Discord room of people wondering about the same thing.",
+      "version": "0.0.1"
+    }
+  ]
+}
