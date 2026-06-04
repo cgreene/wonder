@@ -1,21 +1,85 @@
 ---
 name: scrub-local-env
-description: Use within /wonder to strip local environment details from a draft wonder profile — absolute file paths, usernames, hostnames, internal URLs, IPs. Deterministic, pattern-based.
+description: Use within /wonder to strip local environment details from a draft wonder profile — absolute file paths, home-relative paths, usernames, internal hostnames/URLs, IPs, ports. Deterministic script pass plus a brief model pass for the names regex can't catch.
 ---
 
 # scrub-local-env  (slice B)
 
-> Scaffold — not implemented.
+> Script: **implemented**. Model-judgment pass: scaffold.
 
-Remove machine / local-environment fingerprints.
+Remove machine / local-environment fingerprints — the things that betray
+*where* the draft was written. Two layers, run in this order:
 
-## Targets
-Absolute paths (`/Users/...`, `C:\...`), usernames, hostnames, internal/private
-URLs and IPs, ports.
+1. **Deterministic script (hard signal).** Paths, IPs, internal hosts/URLs,
+   and the usernames embedded in them. Regex; no judgment.
+2. **Model judgment.** What the patterns can't see — an internal server or
+   cluster name that looks like an ordinary word (`della`, `tiger`, `bridges`),
+   a project codename, a lab-internal acronym.
 
-## Approach
-Deterministic / pattern-based.
+## Layer 1: the script
+
+Deterministic, line-by-line. Run with `uv`:
+
+```bash
+uv run skills/scrub-local-env/scripts/localenv.py check <file|->   # report matches, exit 1 if any
+uv run skills/scrub-local-env/scripts/localenv.py apply <file|->   # emit text with matches -> placeholders
+```
+
+It detects and, on `apply`, replaces with a category placeholder:
+
+| Category | Placeholder | Examples |
+|----------|-------------|----------|
+| Absolute / home / machine paths | `[PATH]` | `/Users/<name>/...`, `~/...`, `C:\Users\<name>\...`, `/tmp`, `/mnt`, `/scratch` |
+| IPv4 addresses | `[IP]` | `192.168.1.1`, `10.0.0.5` (private ranges especially); all redacted |
+| Internal hosts / URLs / ports | `[HOST]` / `[URL]` | `localhost`, `*.local/.internal/.corp/.lan`, `host:8080`, `user@host`, `https://dashboard.internal/...` |
+| Usernames | `[USER]` | a name seen in a path (`/Users/betsy/`) is then redacted anywhere in the text |
+
+It deliberately does **not** flag clearly-public URLs (arxiv, doi.org, github,
+pypi, huggingface, …) or bare common binaries (`/usr/bin/python`), and uses
+boundaries so a version string like `1.2.3.4` isn't mistaken for an IP. Precision
+over coverage: a false positive that mangles a public DOI erodes trust in the
+whole pipeline.
+
+### Procedure (called by /wonder)
+
+Run over the **entire** profile, `keywords` included — `PROFILE.md` marks
+`keywords` as the public surface (matched on and posted as the room seed).
+
+1. Write the full draft to a temp file (or pipe on stdin) and run `check`.
+   Any match is a hard block.
+2. Run `apply` to insert placeholders, then **rewrite** each affected
+   sentence so the placeholder isn't itself a tell. A profile shouldn't read
+   "my data lives in `[PATH]`" — it should just not mention where the data
+   lives. `[HOST]`/`[IP]` usually mean a sentence about infrastructure that the
+   match key doesn't need at all; drop it or generalize ("on a university
+   cluster"). A `[USER]` is a person — handle as PII, never a placeholder.
+3. Re-run `check` on the rewritten draft — it must pass clean (exit 0) before
+   the profile may proceed to the review gate.
+
+## Layer 2: model judgment
+
+### Targets
+Internal host/cluster/project names that pass for ordinary words and so slip
+past the regex (`della`, `tiger`, a lab's `gpu-box`, an internal codename), and
+local paths in an unusual shape the patterns don't cover.
+
+### Approach
+**Model judgment**, lightweight — this layer only mops up what Layer 1 can't
+pattern-match. When a token reads like it might name a specific machine,
+cluster, or internal service, generalize it ("our cluster") or ask the user.
+When unsure, ask — don't guess a proper noun into the profile.
+
+If the user confirms a stable internal name should never leak (a cluster name,
+a server), offer to `add` it to the never-share filter list owned by
+`scrub-unpublished` so it's caught deterministically next time.
+
+## Propose, don't dispose
+
+Return to the caller (/wonder): the scrubbed draft, a short change log
+(`removed/generalized X because Y` per edit), and status (`clean` only if the
+final text passes `check` with exit 0). The user reviews and approves; this
+skill never sends anything anywhere.
 
 ## TODO
-- [ ] Path + host + IP patterns
-- [ ] Allowlist clearly-public URLs (e.g. arxiv.org) so we don't over-scrub
+- [ ] Decide whether IPv6 is worth covering (rare in these profiles)
+- [ ] Confirm `[USER]` hand-off to scrub-pii vs. handling names here
