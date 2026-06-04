@@ -1,4 +1,8 @@
 {
-  "_instructions": "Placeholder. Once server/ has a runtime, register the OhWow MCP server here so /wonder can call suggest_rooms / connect. Example: \"mcpServers\": { \"ohwow\": { \"command\": \"node\", \"args\": [\"server/dist/index.js\"] } }. See server/README.md.",
-  "mcpServers": {}
+  "mcpServers": {
+    "ohwow": {
+      "command": "node",
+      "args": ["server/src/index.js"]
+    }
+  }
 }

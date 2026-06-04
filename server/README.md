@@ -1,11 +1,30 @@
 # OhWow MCP service  (slice C)
 
-> Scaffold — runtime not yet chosen ("decide later"). This README documents the
-> contract so work can start once a runtime (TS/Node or Python) is picked.
+> **Implemented (v0).** Node MCP server over stdio (`src/index.js`), registered in
+> the root `.mcp.json` as `ohwow`. Reuses the `../discord/` module directly.
 
 OhWow is the MCP service every `/wonder` talks to. It receives an **approved**
 wonder profile (see `../PROFILE.md`), matches people on shared `keywords`, and
 drives the Discord side (via `../discord/`) to create/seed a room and issue invites.
+
+## Run
+
+```bash
+cd server
+npm install
+```
+
+Claude Code launches it automatically via the root `.mcp.json`
+(`node server/src/index.js`). It reads the Discord bot token + guild ID from
+`../discord/.env` (single source of creds — nothing secret lives in this folder or
+in `.mcp.json`), logs into Discord once at startup, and serves `suggest_rooms` /
+`connect` over stdio.
+
+Implementation notes:
+- v0 matching = `keywords` overlap, delegated to `../discord/`'s stateless
+  find-or-create (`findOrCreateRoom`). No persistent state here.
+- `discord.js` resolves from `../discord/node_modules` (the imported files live
+  there), so this package only depends on the MCP SDK + zod.
 
 ## MCP tools (interface (b) — agree before splitting work)
 
