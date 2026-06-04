@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "ohwow": {
-      "command": "node",
-      "args": ["server/src/index.js"]
+      "type": "http",
+      "url": "https://ohwow-mcp-production.up.railway.app/mcp"
     }
   }
 }
