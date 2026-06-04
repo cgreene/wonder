@@ -9,7 +9,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 // resolution for 'discord.js' walks up from those files into discord/node_modules.
 import { login } from '../../discord/src/client.js';
 import { findOrCreateRoom } from '../../discord/src/findOrCreateRoom.js';
-import { listOhWowRooms, parseKeywords, getServerInvite, roomUrl } from '../../discord/src/rooms.js';
+import { listOhWowRooms, parseKeywords, scoreRoomsByOverlap, getServerInvite, roomUrl } from '../../discord/src/rooms.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -20,7 +20,6 @@ loadEnv({ path: path.resolve(here, '../../discord/.env') });
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CATEGORY_ID = process.env.DISCORD_CATEGORY_ID || undefined;
 
-const norm = (k) => String(k).toLowerCase().trim();
 const parseList = (s) =>
   (s ? String(s).split(',').map((x) => x.trim()).filter(Boolean) : null);
 
@@ -52,15 +51,15 @@ export function buildServer(getClient) {
     },
     async ({ keywords }) => {
       const guild = await getClient().guilds.fetch(GUILD_ID);
-      const want = new Set(keywords.map(norm));
-      const rooms = (await listOhWowRooms(guild))
-        .map((ch) => {
-          const kws = parseKeywords(ch.topic);
-          const overlap = kws.map(norm).filter((k) => want.has(k)).length;
-          return { channelId: ch.id, name: ch.name, keywords: kws, overlap };
-        })
+      const rooms = scoreRoomsByOverlap(await listOhWowRooms(guild), keywords)
         .filter((r) => r.overlap > 0)
-        .sort((a, b) => b.overlap - a.overlap);
+        .sort((a, b) => b.overlap - a.overlap)
+        .map(({ room, overlap }) => ({
+          channelId: room.id,
+          name: room.name,
+          keywords: parseKeywords(room.topic),
+          overlap,
+        }));
       return { content: [{ type: 'text', text: JSON.stringify({ rooms }, null, 2) }] };
     },
   );

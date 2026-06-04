@@ -18,6 +18,45 @@ export function parseKeywords(topic) {
     .filter(Boolean);
 }
 
+/** Normalize a keyword for comparison. */
+export const norm = (k) => String(k).toLowerCase().trim();
+
+/** Count of distinct keywords shared between a room and a request (case-insensitive). */
+export function keywordOverlap(roomKeywords, requestKeywords) {
+  const want = new Set(requestKeywords.map(norm));
+  let n = 0;
+  for (const k of new Set(roomKeywords.map(norm))) if (want.has(k)) n++;
+  return n;
+}
+
+/** Score existing rooms by how many of `keywords` their topic shares. */
+export function scoreRoomsByOverlap(rooms, keywords) {
+  return rooms.map((room) => ({ room, overlap: keywordOverlap(parseKeywords(room.topic), keywords) }));
+}
+
+/**
+ * How many distinct *people* are active in a room — the occupancy signal the
+ * matching policy uses. Rooms aren't truly private (every server member can see
+ * them) and the bot runs without the privileged GuildMembers intent, so we can't
+ * count "members with access." Instead we count distinct non-bot authors in the
+ * recent message history (the bot's seed message doesn't count). That measures
+ * active participants, not silent lurkers — the right notion for "small groups."
+ * Best-effort: returns 0 if history can't be read.
+ */
+export async function countParticipants(channel, { sample = 50 } = {}) {
+  try {
+    const limit = Math.min(Math.max(sample, 1), 100); // Discord caps fetch at 100
+    const msgs = await channel.messages.fetch({ limit });
+    const humans = new Set();
+    for (const m of msgs.values()) {
+      if (!m.author?.bot) humans.add(m.author.id);
+    }
+    return humans.size;
+  } catch {
+    return 0;
+  }
+}
+
 export function isOhWowRoom(channel) {
   return (
     channel?.type === ChannelType.GuildText &&
