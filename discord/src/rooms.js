@@ -47,6 +47,35 @@ export async function lastActivityTs(channel) {
   }
 }
 
+/** A deep link that opens a specific channel in the Discord app/web. */
+export function roomUrl(guildId, channelId) {
+  return `https://discord.com/channels/${guildId}/${channelId}`;
+}
+
+/**
+ * A reusable invite to the SERVER (its system/general channel), so people who
+ * aren't members yet can join. Reused if one already exists.
+ */
+export async function getServerInvite(guild) {
+  let channel = guild.systemChannelId
+    ? await guild.channels.fetch(guild.systemChannelId).catch(() => null)
+    : null;
+  if (!channel || channel.type !== ChannelType.GuildText) {
+    const all = await guild.channels.fetch();
+    channel = [...all.values()].find((c) => c?.type === ChannelType.GuildText);
+  }
+  if (!channel) throw new Error('No text channel to anchor a server invite');
+  try {
+    const invs = await channel.fetchInvites();
+    const ever = [...invs.values()].find((i) => i.maxAge === 0);
+    if (ever) return `https://discord.gg/${ever.code}`;
+  } catch {
+    // fall through to create
+  }
+  const inv = await channel.createInvite({ maxAge: 0, maxUses: 0, unique: false, reason: 'OhWow: join the server' });
+  return `https://discord.gg/${inv.code}`;
+}
+
 /** Reuse an existing shared invite for the channel, or mint one. */
 export async function getOrCreateInvite(channel, reason) {
   try {

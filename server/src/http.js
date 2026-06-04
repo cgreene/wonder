@@ -6,7 +6,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { login } from '../../discord/src/client.js';
 import { reapIdleRooms } from '../../discord/src/reaper.js';
 import { findOrCreateRoom } from '../../discord/src/findOrCreateRoom.js';
-import { isOhWowRoom } from '../../discord/src/rooms.js';
+import { isOhWowRoom, getServerInvite, roomUrl } from '../../discord/src/rooms.js';
 import { buildServer, demoState } from './index.js';
 
 // Remote (hosted) entrypoint: same OhWow tools as src/index.js, but served over
@@ -193,8 +193,12 @@ app.post('/admin/demo/room', async (req, res) => {
       categoryId: CATEGORY_ID,
       keywords: demoState.keywords,
     });
-    const enterUrl = PUBLIC_URL ? `${PUBLIC_URL}/auth/start?room=${room.channelId}` : null;
-    res.json({ demo: demoState, room: { ...room, enterUrl } });
+    const guild = await client.guilds.fetch(GUILD_ID);
+    const serverInviteUrl = await getServerInvite(guild);
+    res.json({
+      demo: demoState,
+      room: { ...room, roomUrl: roomUrl(GUILD_ID, room.channelId), serverInviteUrl },
+    });
   } catch (err) {
     res.status(500).json({ error: String(err.message || err) });
   }

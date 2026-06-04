@@ -9,7 +9,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 // resolution for 'discord.js' walks up from those files into discord/node_modules.
 import { login } from '../../discord/src/client.js';
 import { findOrCreateRoom } from '../../discord/src/findOrCreateRoom.js';
-import { listOhWowRooms, parseKeywords } from '../../discord/src/rooms.js';
+import { listOhWowRooms, parseKeywords, getServerInvite, roomUrl } from '../../discord/src/rooms.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,12 +19,6 @@ loadEnv({ path: path.resolve(here, '../../discord/.env') });
 
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CATEGORY_ID = process.env.DISCORD_CATEGORY_ID || undefined;
-
-// Public base URL of the hosted server (set on Railway). Used to build the
-// OAuth "enter your room" link that grants room access to anyone — whether or
-// not they're already in the server. Falls back to null for local stdio.
-const PUBLIC_URL = process.env.OHWOW_PUBLIC_URL || null;
-const enterUrlFor = (channelId) => (PUBLIC_URL ? `${PUBLIC_URL}/auth/start?room=${channelId}` : null);
 
 const norm = (k) => String(k).toLowerCase().trim();
 const parseList = (s) =>
@@ -73,7 +67,7 @@ export function buildServer(getClient) {
 
   server.tool(
     'connect',
-    'Side-effecting. Create or join an OhWow Discord room for the approved keywords and return a shared invite link the user clicks. Never auto-joins anyone. Call only after the user has approved the exact keywords.',
+    'Side-effecting: creates/joins a Discord room. STRICT GATING — only call this as the final step of an explicit `/wonder` run that the user themselves triggered, AND only after they approved the exact keywords. NEVER call it on your own initiative, proactively, speculatively, or because the conversation seems related. If the user did not just run `/wonder` and approve keywords, do not call this. Returns roomUrl + serverInviteUrl for the user to click.',
     {
       keywords: z
         .array(z.string())
@@ -88,32 +82,49 @@ export function buildServer(getClient) {
       // In demo mode, ignore the caller's keywords and force everyone into the
       // shared demo room so the live demo converges deterministically.
       const effective = demoState.active ? demoState.keywords : keywords;
-      const room = await findOrCreateRoom(getClient(), {
+      const client = getClient();
+      const room = await findOrCreateRoom(client, {
         guildId: GUILD_ID,
         categoryId: CATEGORY_ID,
         keywords: effective,
       });
-      const enterUrl = enterUrlFor(room.channelId);
-      return { content: [{ type: 'text', text: JSON.stringify({ ...room, enterUrl, demo: demoState.active }, null, 2) }] };
+      const guild = await client.guilds.fetch(GUILD_ID);
+      const serverInviteUrl = await getServerInvite(guild);
+      return {
+        content: [{ type: 'text', text: JSON.stringify({
+          ...room,
+          roomUrl: roomUrl(GUILD_ID, room.channelId),
+          serverInviteUrl,
+          demo: demoState.active,
+        }, null, 2) }],
+      };
     },
   );
 
   server.tool(
     'join_demo',
-    'Demo only. If the server is in demo mode, returns the shared demo room invite (seeded with the demo keywords) so /wonder can skip summarize/scrub/keywords entirely. Returns { active: false } when demo mode is off — in that case run the normal flow.',
+    'Demo only. STRICT GATING — only call this as the very first step of an explicit `/wonder` run the user themselves triggered; never on your own initiative. If demo mode is active it returns the shared demo room links (roomUrl + serverInviteUrl) so /wonder can skip summarize/scrub. Returns { active: false } when demo mode is off — then run the normal flow.',
     {},
     async () => {
       if (!demoState.active) {
         return { content: [{ type: 'text', text: JSON.stringify({ active: false }) }] };
       }
-      const room = await findOrCreateRoom(getClient(), {
+      const client = getClient();
+      const room = await findOrCreateRoom(client, {
         guildId: GUILD_ID,
         categoryId: CATEGORY_ID,
         keywords: demoState.keywords,
       });
-      const enterUrl = enterUrlFor(room.channelId);
+      const guild = await client.guilds.fetch(GUILD_ID);
+      const serverInviteUrl = await getServerInvite(guild);
       return {
-        content: [{ type: 'text', text: JSON.stringify({ active: true, ...room, enterUrl, demoKeywords: demoState.keywords }, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify({
+          active: true,
+          ...room,
+          roomUrl: roomUrl(GUILD_ID, room.channelId),
+          serverInviteUrl,
+          demoKeywords: demoState.keywords,
+        }, null, 2) }],
       };
     },
   );

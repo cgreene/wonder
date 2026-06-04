@@ -6,6 +6,34 @@ revisit freely, but record the change here when you do.
 
 ---
 
+## 2026-06-04 — Rooms gated by server membership; two-link join; creation only on /wonder
+
+**Context:** Plain channel invites to a *hidden* channel don't grant access:
+new joiners landed in #general, existing members couldn't see the room (verified
+on the live server — invites used, zero per-user overwrites added). An OAuth
+"enter your room" bot flow was tried and didn't pan out for the demo.
+
+**Decisions (supersede parts of the entry below):**
+
+1. **Rooms are visible to anyone in the server**, not hidden per-channel. The
+   **server itself is the gate** — it's invite-only, so rooms are private to the
+   outside world but visible to members. (Reverses the per-channel privacy in the
+   earlier entry.)
+2. **Two links, not one.** `connect`/`join_demo` return **`serverInviteUrl`**
+   (join the server) and **`roomUrl`** (deep-link into the room). Already-members
+   just use `roomUrl`; newcomers join first, then open the room.
+3. **Room creation is strictly user-triggered.** Rooms are only ever created by
+   the `connect`/`join_demo` MCP tools, which only `/wonder` calls. Tool
+   descriptions are hardened so Claude never calls them on its own initiative.
+   There is **no background job that creates rooms or sends invites.**
+4. **The reaper stays** (delete-only, idle > 24h). It's the only background timer
+   and never creates/invites.
+
+**Why:** Reliable for both members and non-members with zero bot-identity
+plumbing, and keeps room creation an explicit user action.
+
+---
+
 ## 2026-06-04 — Discord rooms: private, disposable, stateless convergence
 
 **Context:** Building the OhWow Discord side (`discord/`). Needed to decide how

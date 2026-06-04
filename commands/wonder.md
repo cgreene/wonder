@@ -20,8 +20,9 @@ Call the `ohwow` MCP tool **`join_demo()`** before anything else.
 
 - If it returns **`active: true`**, the server is in demo mode. **Skip steps 1–4
   entirely** — no summarize, no scrub, no review gate, no keyword upload. Give the
-  user the returned **`enterUrl`** ("click to enter your room"), and stop. (Nothing
-  about their session is read or sent in this path.)
+  user the two returned links — **`serverInviteUrl`** (join the server if you're not
+  already in it) and **`roomUrl`** (open your room) — and stop. (Nothing about their
+  session is read or sent in this path.)
 - If it returns **`active: false`**, ignore it and run the normal flow below.
 
 ### 1. Summarize the session → a wonder profile
@@ -65,20 +66,18 @@ Only after explicit approval, use the **`ohwow`** MCP tools:
    user could land in (ranked by keyword overlap). Show this so they know whether
    they're joining a live conversation or starting a fresh one.
 2. **`connect({ keywords, wondering_about })`** — creates or joins the room and
-   returns `{ channelName, enterUrl, inviteUrl, reused }`. This is the only
+   returns `{ channelName, roomUrl, serverInviteUrl, reused }`. This is the only
    side-effecting call. Send only the approved keywords (the scrubbed public surface).
 
 ### 5. Hand off
-Give the user the **`enterUrl`** ("click to enter your room") and the room name.
+Give the user the two links and the room name:
+- **`serverInviteUrl`** — "Join the OhWow server (if you're not already in it)."
+- **`roomUrl`** — "Then open your room: #<channelName>."
+
 Tell them:
-- they **click it** to authorize once and get dropped into the private room —
-  this works whether or not they're already in the Discord server;
-- they are never auto-added — clicking is their choice;
+- if they're already in the server, they can just use `roomUrl` directly;
 - if `reused` was true, others are already there (mention the overlap);
 - the room is disposable and **auto-closes after 24h of no activity**.
-
-(`inviteUrl` is a fallback only; prefer `enterUrl`, which actually grants the
-private room. A plain invite drops people in #general without room access.)
 
 ## Notes
 - **v0 is keywords-only.** ORCID identity and semantic ("meaning, not tags")

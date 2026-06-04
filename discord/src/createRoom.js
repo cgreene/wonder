@@ -55,8 +55,9 @@ export async function createRoom(client, { guildId, keywords, categoryId }) {
   const guild = await client.guilds.fetch(guildId);
   const name = roomName(keywords);
 
-  // Private channel: deny @everyone the ability to even see it. People only get
-  // in via the invite link below, which grants access to this channel.
+  // Visible to anyone in the server (the server itself is the gate — people join
+  // via the server invite, then open the room link). No @everyone deny, so members
+  // can actually see and enter the room.
   const channel = await guild.channels.create({
     name,
     type: ChannelType.GuildText,
@@ -64,12 +65,8 @@ export async function createRoom(client, { guildId, keywords, categoryId }) {
     topic: buildTopic(keywords),
     permissionOverwrites: [
       {
-        id: guild.roles.everyone.id,
-        deny: [PermissionFlagsBits.ViewChannel],
-      },
-      {
-        // Make sure the bot itself can still manage and post. ReadMessageHistory
-        // lets the reaper check the room's last activity before deleting it.
+        // Make sure the bot itself can manage and post. ReadMessageHistory lets
+        // the reaper check the room's last activity before deleting it.
         id: client.user.id,
         allow: [
           PermissionFlagsBits.ViewChannel,
