@@ -1,0 +1,16 @@
+{
+  "name": "ohwow-discord",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OhWow Discord side: programmatically create a keyword-seeded private room and return a shared invite link.",
+  "scripts": {
+    "demo": "node src/demo.js",
+    "serve": "node src/server.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  }
+}
