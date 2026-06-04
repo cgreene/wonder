@@ -10,9 +10,9 @@ approve it, it hands those keywords to **OhWow**, a service that matches you
 against everyone else and drops you into a Discord room with the people working
 on the same thing.
 
-> **Status: early design sketch, pre-build.** Nothing here is implemented yet.
-> This document is a starting point for the group to react to and refine — the
-> open questions and assumptions below are the parts that most need your input.
+> **Status: working MVP, deployed.** `/wonder` runs end-to-end against a hosted
+> OhWow MCP server (on Railway), creating/joining real Discord rooms. Install it
+> from `ohwow.science/install`. See the live walkthrough just below.
 
 ## The idea
 
@@ -38,6 +38,47 @@ with humans who care about the same thing you do.
 - **OhWow** — the MCP service everyone's `/wonder` talks to. It matches on
   keywords and owns the Discord room creation + invites. (Working name; candidate
   domain TBD — `ohwow.science` was floated.)
+
+## Live walkthrough
+
+A real `/wonder` run against the hosted OhWow MCP, using a Claude session as the
+source. The five steps the command performs:
+
+1. **Summarize the session → a wonder profile.** Distill the live session into a
+   one-line "wondering about", field, methods, and a tight keyword set. Example
+   from a session spent building OhWow itself:
+   - *Wondering about:* wiring Claude Code sessions to a Discord matchmaking service over MCP
+   - *Keywords:* `mcp server`, `discord api`, `claude code plugins`, `researcher matchmaking`, `ai for science`
+
+2. **Scrub.** Run the scrub skills over the draft. In this run, none of the
+   secrets / file paths / tokens that appeared in the session made it into the
+   keywords.
+
+3. **Review gate.** Show the user the exact keywords. Nothing is sent until they
+   approve.
+
+4. **Connect via the OhWow MCP.** `suggest_rooms` previews matches (read-only),
+   then `connect` does the one side-effecting call:
+
+   ```
+   join_demo            -> demo mode active? false
+   suggest_rooms        -> [{room: serendipitous-matching-roundtable, overlap: 1},
+                            {room: discord-invite-links-lab, overlap: 1}]
+   connect              ->
+     room:            #serendipitous-matching-roundtable
+     reused existing: true (overlap 1)        # convergence: routed into a live room,
+                                              # not a brand-new empty one
+     serverInviteUrl: https://discord.gg/…    # join the server (if you're not in it)
+     roomUrl:         https://discord.com/channels/…/…   # then open the room
+   ```
+
+5. **Hand off.** The user gets two links — **`serverInviteUrl`** to join the
+   server and **`roomUrl`** to open the room. Already-members just use `roomUrl`.
+
+The notable bit: `connect` **reused an existing room** instead of creating a new
+one, because the keywords overlapped — so overlapping topics *converge* rather
+than multiply. Rooms are only ever created/joined by an explicit, user-triggered
+`/wonder`; nothing runs in the background except a delete-only idle-room reaper.
 
 ## How it works (proposed)
 
