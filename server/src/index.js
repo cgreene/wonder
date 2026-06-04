@@ -20,6 +20,12 @@ loadEnv({ path: path.resolve(here, '../../discord/.env') });
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CATEGORY_ID = process.env.DISCORD_CATEGORY_ID || undefined;
 
+// Public base URL of the hosted server (set on Railway). Used to build the
+// OAuth "enter your room" link that grants room access to anyone — whether or
+// not they're already in the server. Falls back to null for local stdio.
+const PUBLIC_URL = process.env.OHWOW_PUBLIC_URL || null;
+const enterUrlFor = (channelId) => (PUBLIC_URL ? `${PUBLIC_URL}/auth/start?room=${channelId}` : null);
+
 const norm = (k) => String(k).toLowerCase().trim();
 const parseList = (s) =>
   (s ? String(s).split(',').map((x) => x.trim()).filter(Boolean) : null);
@@ -87,7 +93,8 @@ export function buildServer(getClient) {
         categoryId: CATEGORY_ID,
         keywords: effective,
       });
-      return { content: [{ type: 'text', text: JSON.stringify({ ...room, demo: demoState.active }, null, 2) }] };
+      const enterUrl = enterUrlFor(room.channelId);
+      return { content: [{ type: 'text', text: JSON.stringify({ ...room, enterUrl, demo: demoState.active }, null, 2) }] };
     },
   );
 
@@ -104,8 +111,9 @@ export function buildServer(getClient) {
         categoryId: CATEGORY_ID,
         keywords: demoState.keywords,
       });
+      const enterUrl = enterUrlFor(room.channelId);
       return {
-        content: [{ type: 'text', text: JSON.stringify({ active: true, ...room, demoKeywords: demoState.keywords }, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify({ active: true, ...room, enterUrl, demoKeywords: demoState.keywords }, null, 2) }],
       };
     },
   );

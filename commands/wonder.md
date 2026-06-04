@@ -19,9 +19,9 @@ that gate.
 Call the `ohwow` MCP tool **`join_demo()`** before anything else.
 
 - If it returns **`active: true`**, the server is in demo mode. **Skip steps 1–4
-  entirely** — no summarize, no scrub, no review gate, no keyword upload. Just give
-  the user the returned **invite link** + room name, tell them to click to join, and
-  stop. (Nothing about their session is read or sent in this path.)
+  entirely** — no summarize, no scrub, no review gate, no keyword upload. Give the
+  user the returned **`enterUrl`** ("click to enter your room"), and stop. (Nothing
+  about their session is read or sent in this path.)
 - If it returns **`active: false`**, ignore it and run the normal flow below.
 
 ### 1. Summarize the session → a wonder profile
@@ -65,14 +65,20 @@ Only after explicit approval, use the **`ohwow`** MCP tools:
    user could land in (ranked by keyword overlap). Show this so they know whether
    they're joining a live conversation or starting a fresh one.
 2. **`connect({ keywords, wondering_about })`** — creates or joins the room and
-   returns `{ channelName, inviteUrl, reused }`. This is the only side-effecting
-   call. Send only the approved keywords (the scrubbed public surface).
+   returns `{ channelName, enterUrl, inviteUrl, reused }`. This is the only
+   side-effecting call. Send only the approved keywords (the scrubbed public surface).
 
 ### 5. Hand off
-Give the user the **invite link** and the room name. Tell them:
-- they **click to join** — they are never auto-added;
+Give the user the **`enterUrl`** ("click to enter your room") and the room name.
+Tell them:
+- they **click it** to authorize once and get dropped into the private room —
+  this works whether or not they're already in the Discord server;
+- they are never auto-added — clicking is their choice;
 - if `reused` was true, others are already there (mention the overlap);
 - the room is disposable and **auto-closes after 24h of no activity**.
+
+(`inviteUrl` is a fallback only; prefer `enterUrl`, which actually grants the
+private room. A plain invite drops people in #general without room access.)
 
 ## Notes
 - **v0 is keywords-only.** ORCID identity and semantic ("meaning, not tags")

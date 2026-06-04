@@ -6,6 +6,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { login } from '../../discord/src/client.js';
 import { reapIdleRooms } from '../../discord/src/reaper.js';
 import { findOrCreateRoom } from '../../discord/src/findOrCreateRoom.js';
+import { isOhWowRoom } from '../../discord/src/rooms.js';
 import { buildServer, demoState } from './index.js';
 
 // Remote (hosted) entrypoint: same OhWow tools as src/index.js, but served over
@@ -14,6 +15,12 @@ import { buildServer, demoState } from './index.js';
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CATEGORY_ID = process.env.DISCORD_CATEGORY_ID || undefined;
 const ADMIN_TOKEN = process.env.OHWOW_ADMIN_TOKEN;
+
+// OAuth2: lets us add anyone (new or existing) into a private room and drop them in.
+const PUBLIC_URL = process.env.OHWOW_PUBLIC_URL || '';
+const CLIENT_ID = process.env.OHWOW_CLIENT_ID;
+const CLIENT_SECRET = process.env.OHWOW_CLIENT_SECRET;
+const REDIRECT_URI = `${PUBLIC_URL}/auth/callback`;
 if (!process.env.DISCORD_BOT_TOKEN) {
   throw new Error('DISCORD_BOT_TOKEN not set');
 }
@@ -77,6 +84,80 @@ const sessionRequest = async (req, res) => {
 app.get('/mcp', sessionRequest);
 app.delete('/mcp', sessionRequest);
 
+// --- OAuth "enter your room" flow -------------------------------------------
+// /auth/start?room=<channelId> -> Discord consent -> /auth/callback -> the bot
+// adds the user to the server (if needed) AND grants them the private room, then
+// deep-links them straight into the channel. Works for members and non-members.
+
+app.get('/auth/start', (req, res) => {
+  const room = String(req.query.room || '');
+  if (!CLIENT_ID || !CLIENT_SECRET || !PUBLIC_URL) {
+    return res.status(503).send('OAuth not configured (OHWOW_CLIENT_ID / OHWOW_CLIENT_SECRET / OHWOW_PUBLIC_URL).');
+  }
+  if (!room) return res.status(400).send('Missing room.');
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: 'code',
+    scope: 'identify guilds.join',
+    redirect_uri: REDIRECT_URI,
+    state: room,
+    prompt: 'consent',
+  });
+  res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
+});
+
+app.get('/auth/callback', async (req, res) => {
+  const code = String(req.query.code || '');
+  const channelId = String(req.query.state || '');
+  if (!code || !channelId) return res.status(400).send('Missing code/state.');
+  try {
+    // 1. Exchange the code for the user's access token.
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: REDIRECT_URI,
+      }),
+    });
+    const tok = await tokenRes.json();
+    if (!tok.access_token) return res.status(400).send('OAuth exchange failed.');
+
+    // 2. Identify the user.
+    const meRes = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${tok.access_token}` },
+    });
+    const me = await meRes.json();
+    if (!me.id) return res.status(400).send('Could not identify user.');
+
+    // 3. Only ever grant access to real OhWow rooms.
+    const guild = await client.guilds.fetch(GUILD_ID);
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || !isOhWowRoom(channel)) return res.status(400).send('Unknown room.');
+
+    // 4. Add them to the server (no-op if already a member), then grant the room.
+    await fetch(`https://discord.com/api/guilds/${GUILD_ID}/members/${me.id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ access_token: tok.access_token }),
+    });
+    await channel.permissionOverwrites.create(me.id, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true,
+    });
+
+    // 5. Drop them straight into the room.
+    res.redirect(`https://discord.com/channels/${GUILD_ID}/${channelId}`);
+  } catch (err) {
+    console.error('auth/callback failed:', err);
+    res.status(500).send('Something went wrong joining your room.');
+  }
+});
+
 // --- Demo control (the "artificial trigger") --------------------------------
 // Flip demo mode on, and everyone who runs /wonder converges into one private
 // demo room (skipping summarize/scrub). Protect with OHWOW_ADMIN_TOKEN.
@@ -112,7 +193,8 @@ app.post('/admin/demo/room', async (req, res) => {
       categoryId: CATEGORY_ID,
       keywords: demoState.keywords,
     });
-    res.json({ demo: demoState, room });
+    const enterUrl = PUBLIC_URL ? `${PUBLIC_URL}/auth/start?room=${room.channelId}` : null;
+    res.json({ demo: demoState, room: { ...room, enterUrl } });
   } catch (err) {
     res.status(500).json({ error: String(err.message || err) });
   }
