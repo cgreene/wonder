@@ -13,7 +13,7 @@ export async function login(token = process.env.DISCORD_BOT_TOKEN) {
   await client.login(token);
   // Wait until the client is ready so client.user is populated.
   if (!client.isReady()) {
-    await new Promise((resolve) => client.once('ready', resolve));
+    await new Promise((resolve) => client.once('clientReady', resolve));
   }
   return client;
 }
