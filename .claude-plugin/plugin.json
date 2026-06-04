@@ -1,0 +1,8 @@
+{
+  "name": "wonder",
+  "description": "Run /wonder to turn your Claude session into a sanitized set of keywords and get connected, via OhWow, to a Discord room of people wondering about the same thing.",
+  "version": "0.0.1",
+  "author": {
+    "name": "AI for Science Power Users gathering"
+  }
+}

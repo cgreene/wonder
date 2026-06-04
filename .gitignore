@@ -1,0 +1,22 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Node (if server/ or discord/ use TS/Node)
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# Python (if server/ or discord/ use Python)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
