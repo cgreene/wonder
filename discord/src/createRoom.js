@@ -2,6 +2,7 @@ import {
   ChannelType,
   PermissionFlagsBits,
 } from 'discord.js';
+import { buildTopic, getOrCreateInvite } from './rooms.js';
 
 // Whimsical room-name parts so each room gets a "cool name" instead of a
 // keyword dump. The first keyword anchors the topic; the suffix adds flavor.
@@ -60,20 +61,22 @@ export async function createRoom(client, { guildId, keywords, categoryId }) {
     name,
     type: ChannelType.GuildText,
     parent: categoryId || undefined,
-    topic: `OhWow room · ${keywords.join(', ')}`,
+    topic: buildTopic(keywords),
     permissionOverwrites: [
       {
         id: guild.roles.everyone.id,
         deny: [PermissionFlagsBits.ViewChannel],
       },
       {
-        // Make sure the bot itself can still manage and post.
+        // Make sure the bot itself can still manage and post. ReadMessageHistory
+        // lets the reaper check the room's last activity before deleting it.
         id: client.user.id,
         allow: [
           PermissionFlagsBits.ViewChannel,
           PermissionFlagsBits.SendMessages,
           PermissionFlagsBits.ManageChannels,
           PermissionFlagsBits.CreateInstantInvite,
+          PermissionFlagsBits.ReadMessageHistory,
         ],
       },
     ],
@@ -82,18 +85,12 @@ export async function createRoom(client, { guildId, keywords, categoryId }) {
   await channel.send(seedMessage(keywords));
 
   // A single shared invite. For a private channel, accepting this invite grants
-  // the joiner access to just this channel. maxAge 0 = never expires;
-  // maxUses 0 = unlimited (fine for a hackathon room).
-  const invite = await channel.createInvite({
-    maxAge: 0,
-    maxUses: 0,
-    unique: true,
-    reason: `OhWow room for: ${keywords.join(', ')}`,
-  });
+  // the joiner access to just this channel.
+  const inviteUrl = await getOrCreateInvite(channel, `OhWow room for: ${keywords.join(', ')}`);
 
   return {
     channelId: channel.id,
     channelName: name,
-    inviteUrl: `https://discord.gg/${invite.code}`,
+    inviteUrl,
   };
 }

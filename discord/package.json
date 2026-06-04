@@ -6,7 +6,8 @@
   "description": "OhWow Discord side: programmatically create a keyword-seeded private room and return a shared invite link.",
   "scripts": {
     "demo": "node src/demo.js",
-    "serve": "node src/server.js"
+    "serve": "node src/server.js",
+    "reap": "node src/reap.js"
   },
   "dependencies": {
     "discord.js": "^14.16.3",
