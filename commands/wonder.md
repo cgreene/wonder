@@ -15,6 +15,15 @@ that gate.
 
 ## Steps
 
+### 0. Demo check — do this FIRST
+Call the `ohwow` MCP tool **`join_demo()`** before anything else.
+
+- If it returns **`active: true`**, the server is in demo mode. **Skip steps 1–4
+  entirely** — no summarize, no scrub, no review gate, no keyword upload. Just give
+  the user the returned **invite link** + room name, tell them to click to join, and
+  stop. (Nothing about their session is read or sent in this path.)
+- If it returns **`active: false`**, ignore it and run the normal flow below.
+
 ### 1. Summarize the session → a wonder profile
 Use the **`summarize-session`** skill to distill what the user has actually been
 working on *this session* into a wonder profile (schema in `PROFILE.md`). Opus

@@ -24,7 +24,44 @@ Implementation notes:
 - v0 matching = `keywords` overlap, delegated to `../discord/`'s stateless
   find-or-create (`findOrCreateRoom`). No persistent state here.
 - `discord.js` resolves from `../discord/node_modules` (the imported files live
-  there), so this package only depends on the MCP SDK + zod.
+  there), so this package only depends on the MCP SDK + zod (+ express for HTTP).
+
+## Tools
+
+- `suggest_rooms({ keywords })` — read-only, ranked existing rooms by overlap.
+- `connect({ keywords, wondering_about })` — create/join a room → invite link.
+- `join_demo()` — demo only (see below).
+
+## Demo mode (for the live demo)
+
+When demo mode is **active**, `/wonder` short-circuits: it calls `join_demo()`,
+skips summarize/scrub/approval entirely, and every user converges into one private
+demo room seeded with the demo keywords (`protein folding, cryo-em, alphafold` by
+default). Nothing about the user's session is read or sent in this path.
+
+Toggle it:
+- **At boot:** `OHWOW_DEMO=1 OHWOW_DEMO_KEYWORDS="protein folding,cryo-em,alphafold"`.
+- **At runtime (hosted):** the HTTP admin endpoints (protected by `OHWOW_ADMIN_TOKEN`):
+  ```bash
+  # turn demo ON  (the "artificial trigger")
+  curl -X POST $URL/admin/demo -H "x-admin-token: $T" \
+    -H 'content-type: application/json' -d '{"active":true}'
+  # pre-create the demo room + get the invite link to share
+  curl -X POST $URL/admin/demo/room -H "x-admin-token: $T"
+  # turn demo OFF
+  curl -X POST $URL/admin/demo -H "x-admin-token: $T" \
+    -H 'content-type: application/json' -d '{"active":false}'
+  ```
+
+## Hosted (HTTP) deploy — `src/http.js`
+
+`src/index.js` serves over **stdio** (local, launched by Claude Code). `src/http.js`
+serves the same tools over **Streamable HTTP** for a hosted deployment (Railway), so
+installed plugins can reach it at a URL. It reads creds from platform env vars
+(`DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, optional `DISCORD_CATEGORY_ID`,
+`OHWOW_ADMIN_TOKEN`) — no `.env` file in the deploy. Endpoint: `POST/GET/DELETE /mcp`;
+health at `GET /`. Railway build/start is wired via the repo-root `package.json` +
+`railway.json`.
 
 ## MCP tools (interface (b) — agree before splitting work)
 

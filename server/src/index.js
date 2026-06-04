@@ -21,6 +21,17 @@ const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CATEGORY_ID = process.env.DISCORD_CATEGORY_ID || undefined;
 
 const norm = (k) => String(k).toLowerCase().trim();
+const parseList = (s) =>
+  (s ? String(s).split(',').map((x) => x.trim()).filter(Boolean) : null);
+
+// Demo mode. When active, /wonder skips summarize/scrub/approval and everyone who
+// runs it converges into ONE private demo room seeded with these keywords. Mutable
+// at runtime via the http admin endpoints (see src/http.js); also settable at boot
+// with OHWOW_DEMO=1 / OHWOW_DEMO_KEYWORDS="a,b,c".
+export const demoState = {
+  active: process.env.OHWOW_DEMO === '1',
+  keywords: parseList(process.env.OHWOW_DEMO_KEYWORDS) ?? ['protein folding', 'cryo-em', 'alphafold'],
+};
 
 /**
  * Register the OhWow tools on an McpServer. Handlers pull the Discord client
@@ -68,12 +79,34 @@ export function buildServer(getClient) {
         .describe('Optional one-line problem statement from the wonder profile'),
     },
     async ({ keywords }) => {
+      // In demo mode, ignore the caller's keywords and force everyone into the
+      // shared demo room so the live demo converges deterministically.
+      const effective = demoState.active ? demoState.keywords : keywords;
       const room = await findOrCreateRoom(getClient(), {
         guildId: GUILD_ID,
         categoryId: CATEGORY_ID,
-        keywords,
+        keywords: effective,
       });
-      return { content: [{ type: 'text', text: JSON.stringify(room, null, 2) }] };
+      return { content: [{ type: 'text', text: JSON.stringify({ ...room, demo: demoState.active }, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'join_demo',
+    'Demo only. If the server is in demo mode, returns the shared demo room invite (seeded with the demo keywords) so /wonder can skip summarize/scrub/keywords entirely. Returns { active: false } when demo mode is off — in that case run the normal flow.',
+    {},
+    async () => {
+      if (!demoState.active) {
+        return { content: [{ type: 'text', text: JSON.stringify({ active: false }) }] };
+      }
+      const room = await findOrCreateRoom(getClient(), {
+        guildId: GUILD_ID,
+        categoryId: CATEGORY_ID,
+        keywords: demoState.keywords,
+      });
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ active: true, ...room, demoKeywords: demoState.keywords }, null, 2) }],
+      };
     },
   );
 

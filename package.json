@@ -1,0 +1,13 @@
+{
+  "name": "ohwow-deploy",
+  "private": true,
+  "type": "module",
+  "description": "Deploy wrapper: installs and runs the OhWow MCP HTTP server (server/) plus its discord/ dependency. Used by Railway. Not part of the Claude Code plugin.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm --prefix discord install && npm --prefix server install",
+    "start": "node server/src/http.js"
+  }
+}
