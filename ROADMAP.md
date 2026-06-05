@@ -29,9 +29,10 @@ Make the existing flow trustworthy with real unpublished work. No dependencies.
 Makes "real, verified humans" provably true (answers the "real people vs AI" feedback),
 cuts abuse, and unblocks Valency + per-user invites. **Everything below depends on it.**
 
-- [ ] ORCID sign-in (verified OAuth vs. paste-your-iD for v1 — decide) + local config storage.
-- [ ] Optional `orcid` field in the profile schema (`PROFILE.md`), shown at the review gate.
-- [ ] Surface verified identity in the room intro.
+- [x] **v1: paste-your-iD** + local config (`~/.wonder/orcid`) with format + checksum validation (`orcid` skill, tested).
+- [x] Opt-in `orcid` field in the profile schema (`PROFILE.md`), shown at the review gate.
+- [x] Wired through `/wonder` → `connect` → room seed (credits the starter's ORCID), exempt from `scrub-pii`; "verified" copy softened to match.
+- [ ] **Stage 1b — verified OAuth sign-in** (iD verified, not just claimed); then restore "verified" in the copy.
 
 ## Stage 2 — Real matching
 
