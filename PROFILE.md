@@ -20,6 +20,7 @@ sent to OhWow **only after explicit approval**.
 | `methods`         | string[]   | no       | Techniques, models, instruments in play |
 | `looking_for`     | string     | no       | collaborators? data? a technique? feedback? |
 | `can_offer`       | string     | no       | what this person brings |
+| `orcid`           | string     | no       | the user's ORCID iD — **opt-in**, self-declared (not yet OAuth-verified), shown at the review gate. Managed by the `orcid` skill (`~/.wonder/orcid`). |
 | `keywords`        | string[]   | yes      | **the match key.** Lowercase, deduped. OhWow matches and seeds the room on these |
 
 ### Example
@@ -32,6 +33,7 @@ sent to OhWow **only after explicit approval**.
   "methods": ["LLM tool use", "OCR", "schema-constrained decoding"],
   "looking_for": "others who've evaluated extraction accuracy on messy scientific PDFs",
   "can_offer": "a labeled benchmark of 200 annotated notebook pages",
+  "orcid": "0000-0002-1825-0097",
   "keywords": ["information extraction", "llm hallucination", "lab notebooks", "chemistry", "structured output"]
 }
 ```
@@ -49,4 +51,4 @@ sent to OhWow **only after explicit approval**.
 ## Open (see README open questions)
 
 - How much structured vs. freeform? (v0: structured, `keywords` as the match key)
-- Identity (ORCID) is **not** in v0 — keywords only.
+- Identity: **`orcid` is opt-in** — self-declared in v1 (paste it in), OAuth-verified later (roadmap Stage 1b). Matching itself is still keywords-only.
