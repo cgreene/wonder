@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.9"
 # ///
 """Manage and apply the user's never-share filter list.
 
@@ -19,6 +19,8 @@ Usage:
   filterlist.py list               print current entries
   filterlist.py path               print the filter list path
 """
+
+from __future__ import annotations
 
 import os
 import re
