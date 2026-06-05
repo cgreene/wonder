@@ -80,7 +80,7 @@ one, because the keywords overlapped — so overlapping topics *converge* rather
 than multiply. Rooms are only ever created/joined by an explicit, user-triggered
 `/wonder`; nothing runs in the background except a delete-only idle-room reaper.
 
-## How it works (proposed)
+## How it works
 
 ```mermaid
 flowchart TD
@@ -185,37 +185,35 @@ user in control of the one step that's hard to undo.
   connection or advice. We're not policing topics, but the moderation/liability
   layer is deliberately deferred; opt-in + invite-to-join is the v1 guardrail.
 
-## Hackathon demo plan (what we build *today*)
+## Status
 
-Attack it from two angles and keep them separate:
+Built and deployed — see the live walkthrough above, and `ROADMAP.md` for what's next.
+The hackathon "plumbing" is real and end-to-end: `/wonder` summarizes → scrubs →
+(on your approval) hands keywords to the hosted OhWow MCP server, which **matches on
+keyword overlap** (with a size-aware room policy) and creates or joins a seeded Discord
+room. ORCID is in as an **opt-in** identity (self-declared in v1; verified sign-in is on
+the roadmap). Embeddings/Valency matching is still future work. Settled choices live in
+`DECISIONS.md`.
 
-1. **The plumbing** — prove a Claude session can run `/wonder`, emit keywords, and
-   land the user in a programmatically created, keyword-seeded Discord room.
-2. **The "why connect" matching** — the brain that decides *who* belongs together
-   (later: embeddings / Valency).
+**Demo mode** (`join_demo` / `OHWOW_DEMO=1`) remains for live group runs — it
+short-circuits summarize/scrub and converges everyone into one shared, seeded room.
 
-For the demo we **fake the matching** and focus on the plumbing:
+## Open questions
 
-- Skip ORCID and Valency; match on **keywords** only.
-- Everyone in the room publishes the skill, we all run `/wonder` live, and we
-  should all land in the same seeded Discord room — dogfooding it in real time.
-- Hard-code / fake "who should be paired" so we can show the end-to-end loop:
-  session → keywords → OhWow → create room → seed with keywords → invite → click → talk.
+Most of the early questions are settled (`DECISIONS.md`) or tracked as roadmap items
+(`ROADMAP.md`). Genuinely still open:
 
-## Open questions (for the group)
+- **Scrubbing aggressiveness** — how cautious the model pass should be by default on
+  "unpublished science" (over-redacting kills matching signal).
+- **Session access** — summarize from Claude's in-context view (today) or read the raw
+  transcript `.jsonl` for completeness (it catches compacted-out context)?
+- **Room auto-split** — when a room gets large, who/what decides to split it into
+  specialized rooms? (The join-vs-create policy is built; dynamic splitting isn't.)
 
-1. **Session access** — summarize from Claude's current in-context view (simplest) or read the raw transcript `.jsonl` for completeness?
-2. **Who does the Discord write** — confirmed: `connect` creates + seeds the room server-side and returns an invite link the user clicks.
-3. **Identity** — keywords-only for v1; ORCID is a bonus. If we add it, how do we collect it the first time and store it in local config?
-4. **Hosting** — where do OhWow + the room catalog run during the gathering?
-5. **Profile shape** — how much structured vs. freeform?
-6. **Scrubbing depth** — deterministic rules cover secrets/paths; how aggressive should the model be on "unpublished science"?
-7. **Room granularity** — at what crowd size do we split one big room into specialized ones, and who decides?
+## The four parts
 
-## Suggested build slices (≈4 people, parallelizable)
-
-Two interfaces let everything proceed in parallel — pin these down together
-*first*: **(a) the wonder-profile / keyword schema** and **(b) the OhWow tool contract**.
+The system is four components around two contracts — the wonder-profile / keyword
+schema and the OhWow tool contract. All four are built:
 
 | Slice | Owns | Depends on |
 |-------|------|------------|
@@ -224,7 +222,7 @@ Two interfaces let everything proceed in parallel — pin these down together
 | C. OhWow MCP service + matching | keyword matching, `suggest`/`connect` | OhWow contract |
 | D. Discord API: rooms + invites | create/seed rooms, invite links (keyword-seeded) | OhWow contract |
 
-## Proposed repo layout
+## Repo layout
 
 ```
 wonder/
