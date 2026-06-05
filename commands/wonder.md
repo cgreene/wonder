@@ -34,6 +34,11 @@ and a tight `keywords` array (lowercase, deduped). Keywords are the match key; a
 for the handful of phrases that best distinguish this work from everyone else's,
 not generic terms.
 
+**Identity (opt-in).** Check for a saved ORCID with
+`python3 skills/orcid/scripts/orcid.py get`. If it prints an iD, add it as the
+profile's `orcid` field. If it prints nothing, you may offer to set one
+(`orcid.py set <iD>`) — it's optional; `/wonder` works fine without it.
+
 ### 2. Scrub
 Run the scrubbing skills over the draft profile **in this order**, each removing
 one category of sensitive content. Treat `keywords` and every other field as
@@ -47,6 +52,10 @@ about-to-be-public.
 
 Scrubbing *proposes*; the user *disposes* (next step). When a scrubber is unsure,
 it should redact and flag rather than let something through.
+
+The user's own `orcid` field is **consented self-identity** — exempt it from
+`scrub-pii` (which otherwise redacts every ORCID). Third-party ORCIDs in the prose
+fields are still redacted.
 
 ### 3. Review gate — REQUIRED, never skip
 Show the user the **exact** profile that would be sent — especially the final
@@ -65,7 +74,7 @@ Only after explicit approval, use the **`ohwow`** MCP tools:
 1. **`suggest_rooms({ keywords })`** — read-only. Preview the existing rooms the
    user could land in (ranked by keyword overlap). Show this so they know whether
    they're joining a live conversation or starting a fresh one.
-2. **`connect({ keywords, wondering_about })`** — creates or joins the room and
+2. **`connect({ keywords, wondering_about, orcid })`** — creates or joins the room and
    returns `{ channelName, roomUrl, serverInviteUrl, reused }`. This is the only
    side-effecting call. Send only the approved keywords (the scrubbed public surface).
 
@@ -80,9 +89,9 @@ Tell them:
 - the room is disposable and **auto-closes after 24h of no activity**.
 
 ## Notes
-- **v0 is keywords-only.** ORCID identity and semantic ("meaning, not tags")
-  matching are the documented upgrade path (see `README.md` / `DECISIONS.md`), not
-  part of this flow yet.
+- **Identity is opt-in.** If the user set an ORCID it rides along (see the `orcid`
+  skill); v1 is self-declared, not yet OAuth-verified. Semantic ("meaning, not
+  tags") matching is still the documented upgrade path, not part of this flow yet.
 - **`keywords` is the public surface.** Everything in it is visible to matched
   people and posted as the room seed. Scrub accordingly.
 - The OhWow MCP server only ever receives the approved profile — never the raw

@@ -26,15 +26,16 @@ export function roomName(keywords) {
 }
 
 /** The seed message dropped into a fresh room so it isn't empty. */
-export function seedMessage(keywords) {
+export function seedMessage(keywords, orcid) {
   const list = keywords.map((k) => `\`${k}\``).join('  ·  ');
-  return [
+  const lines = [
     '👋 **OhWow connected you here** because you\'re all wondering about similar things.',
     '',
     `**Shared keywords:** ${list}`,
-    '',
-    "Kick things off — what are you working on, and what are you stuck on or hoping to find?",
-  ].join('\n');
+  ];
+  if (orcid) lines.push('', `Started by a researcher · ORCID \`${orcid}\``);
+  lines.push('', "Kick things off — what are you working on, and what are you stuck on or hoping to find?");
+  return lines.join('\n');
 }
 
 /**
@@ -47,7 +48,7 @@ export function seedMessage(keywords) {
  * @param {string} [opts.categoryId] - optional category to nest the channel under
  * @returns {Promise<{channelId: string, channelName: string, inviteUrl: string}>}
  */
-export async function createRoom(client, { guildId, keywords, categoryId }) {
+export async function createRoom(client, { guildId, keywords, categoryId, orcid }) {
   if (!keywords || keywords.length === 0) {
     throw new Error('createRoom requires at least one keyword');
   }

@@ -15,7 +15,7 @@ import { chooseRoom, policyFromEnv } from './chooseRoom.js';
  *
  * @returns {Promise<{channelId, channelName, inviteUrl, reused, overlap, participants, reason}>}
  */
-export async function findOrCreateRoom(client, { guildId, keywords, categoryId, policy } = {}) {
+export async function findOrCreateRoom(client, { guildId, keywords, categoryId, policy, orcid } = {}) {
   if (!keywords || keywords.length === 0) {
     throw new Error('findOrCreateRoom requires at least one keyword');
   }
@@ -57,6 +57,6 @@ export async function findOrCreateRoom(client, { guildId, keywords, categoryId, 
     };
   }
 
-  const room = await createRoom(client, { guildId, keywords, categoryId });
+  const room = await createRoom(client, { guildId, keywords, categoryId, orcid });
   return { ...room, reused: false, overlap: 0, participants: 0, reason: decision.reason };
 }

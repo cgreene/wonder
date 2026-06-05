@@ -76,16 +76,21 @@ export function buildServer(getClient) {
         .string()
         .optional()
         .describe('Optional one-line problem statement from the wonder profile'),
+      orcid: z
+        .string()
+        .optional()
+        .describe("The user's approved ORCID iD (opt-in identity), if they set one"),
     },
-    async ({ keywords }) => {
-      // In demo mode, ignore the caller's keywords and force everyone into the
-      // shared demo room so the live demo converges deterministically.
+    async ({ keywords, orcid }) => {
+      // In demo mode, ignore the caller's keywords/identity and force everyone into
+      // the shared demo room so the live demo converges deterministically.
       const effective = demoState.active ? demoState.keywords : keywords;
       const client = getClient();
       const room = await findOrCreateRoom(client, {
         guildId: GUILD_ID,
         categoryId: CATEGORY_ID,
         keywords: effective,
+        orcid: demoState.active ? undefined : orcid,
       });
       const guild = await client.guilds.fetch(GUILD_ID);
       const serverInviteUrl = await getServerInvite(guild);
