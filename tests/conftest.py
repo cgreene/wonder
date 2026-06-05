@@ -16,6 +16,7 @@ SCRIPTS = {
     "filterlist": REPO / "skills/scrub-unpublished/scripts/filterlist.py",
     "localenv": REPO / "skills/scrub-local-env/scripts/localenv.py",
     "pii": REPO / "skills/scrub-pii/scripts/pii.py",
+    "orcid": REPO / "skills/orcid/scripts/orcid.py",
 }
 
 
@@ -40,6 +41,11 @@ def localenv():
 @pytest.fixture(scope="session")
 def pii():
     return load_script("pii")
+
+
+@pytest.fixture(scope="session")
+def orcid():
+    return load_script("orcid")
 
 
 def script_path(name: str) -> str:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.9"
 # ///
 """Detect and redact deterministic personal identifiers in a wonder profile.
 

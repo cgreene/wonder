@@ -59,6 +59,16 @@ class TestNetwork:
         assert cats(localenv, "upgraded to version 1.2.3.4 yesterday") == set()
         assert cats(localenv, "python 3.10.4 and torch 2.1.0") == set()
 
+    def test_bare_ambiguous_quad_left_to_model(self, localenv):
+        # A 4-part quad with no version prefix and no network context could be a
+        # version string, so the deterministic pass leaves it for the model.
+        assert cats(localenv, "a bug where 1.2.3.4 was parsed as a date") == set()
+        assert cats(localenv, "we hit 9.4.10.2 throughput on the run") == set()
+
+    def test_public_quad_with_network_context_flagged(self, localenv):
+        assert ("IP", "203.0.113.5") in cats(localenv, "ssh to 203.0.113.5 to deploy")
+        assert ("IP", "198.51.100.7") in cats(localenv, "db at 198.51.100.7:5432")
+
     def test_internal_hosts_and_ssh(self, localenv):
         found = cats(localenv, "on gpu-box.internal:8443 via betsy@cluster.edu")
         assert any(c == "HOST" for c, _ in found)

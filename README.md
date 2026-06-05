@@ -240,3 +240,28 @@ wonder/
   .mcp.json                 # wires OhWow into Claude
   PROFILE.md                # the shared wonder-profile schema (the contract)
 ```
+
+## Development
+
+**Install** (only the JS side has dependencies):
+
+```bash
+make install          # or: cd discord && npm install
+```
+
+**Run the tests** — one command for both languages:
+
+```bash
+make test             # Python (pytest) + JS (node --test)
+```
+
+- **Python** — `tests/` (pytest): the deterministic scrub scripts (`localenv`, `pii`,
+  `filterlist`) and the `orcid` validator. Scripts are loaded as modules via
+  `tests/conftest.py`; the CLI contract is exercised through subprocess. Run on
+  Python ≥3.9 (stdlib only).
+- **JS** — `discord/src/*.test.js` (`node --test`): the room-matching policy
+  (`chooseRoom`) and Discord helpers (`rooms`).
+
+**Run the OhWow server locally:** see `server/README.md` (stdio for Claude Code, or
+HTTP). Discord creds live in `discord/.env` (gitignored) — see `discord/README.md`.
+Pushing to `main` auto-deploys the server + frontend.
