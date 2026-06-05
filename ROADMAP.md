@@ -17,8 +17,9 @@ Make the existing flow trustworthy with real unpublished work. No dependencies.
 - [x] Fix `filterlist.py` (crashed on Python <3.10 — it's the never-share safety net).
 - [x] **Copy clarity** — make "real humans, not AI" unmistakable on the landing page and
       funder deck (the scientist deck already does this).
-- [ ] Finish the **scrub model-judgment passes** — `scrub-local-env`, `scrub-pii`,
-      `scrub-unpublished` are still *scaffold*; RED/GREEN test each like `scrub-secrets`.
+- [x] **Scrub model-judgment passes validated** (RED/GREEN) — `scrub-pii` &
+      `scrub-unpublished` pass as-is; `scrub-local-env` fixed an IP/version false-positive
+      (+ test) and documented the username-harvest limit.
 - [ ] Write the scrub **guidance/examples**: PII self-vs-third-party, unpublished
       result-vs-topic, default aggressiveness (README Q6).
 - [ ] Resolve shared design Qs: the `[USER]` hand-off (`scrub-local-env` ↔ `scrub-pii`),

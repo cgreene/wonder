@@ -49,6 +49,26 @@ IPV4 = re.compile(
     r"(?<![.\d])(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)(?!\.?\d)"
 )
 VERSION_PREFIX = re.compile(r"(?:version|ver|v|release|rev|build)\s*$", re.IGNORECASE)
+# A bare dotted-quad is ambiguous (1.2.3.4 is also a version). Redact it only when
+# it is a private-range address or sits next to network context; otherwise leave it
+# for the model pass rather than mangle a legitimate version string.
+IP_CUE = re.compile(
+    r"\b(?:ip|address|addr|host|hostname|server|worker|node|endpoint|gateway|router|"
+    r"ssh|ping|curl|connect|bind|listen|subnet|dns)\b",
+    re.IGNORECASE,
+)
+
+
+def is_private_ipv4(ip: str) -> bool:
+    o = [int(x) for x in ip.split(".")]
+    return (
+        o[0] == 10
+        or (o[0] == 172 and 16 <= o[1] <= 31)
+        or (o[0] == 192 and o[1] == 168)
+        or o[0] == 127
+        or (o[0] == 169 and o[1] == 254)
+        or (o[0] == 100 and 64 <= o[1] <= 127)
+    )
 
 # URLs first (scheme present), then bare internal hosts and host:port, then ssh.
 INTERNAL_URL = re.compile(r"\b(?:https?|ftp|ssh)://[^\s\"'`,;<>)\]]+", re.IGNORECASE)
@@ -96,8 +116,15 @@ def scan(text: str) -> list[tuple[int, int, str, str, str]]:
         for m in MACHINE_PATH.finditer(line):
             claim(m.start(), m.end(), "PATH", "[PATH]")
         for m in IPV4.finditer(line):
-            if VERSION_PREFIX.search(line[: m.start()]):
+            before = line[: m.start()]
+            if VERSION_PREFIX.search(before):
                 continue  # 1.2.3.4 after "version" is not an address
+            if not (
+                is_private_ipv4(m.group(0))
+                or IP_CUE.search(before[-32:])
+                or line[m.end():].lstrip().startswith(":")
+            ):
+                continue  # ambiguous public dotted-quad (likely a version) — leave to the model
             claim(m.start(), m.end(), "IP", "[IP]")
         for m in INTERNAL_URL.finditer(line):
             if not is_public_url(m.group(0)):

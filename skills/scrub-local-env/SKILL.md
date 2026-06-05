@@ -5,7 +5,7 @@ description: Use within /wonder to strip local environment details from a draft 
 
 # scrub-local-env  (slice B)
 
-> Script: **implemented**. Model-judgment pass: scaffold.
+> Script: **implemented**. Model-judgment pass: **validated** (RED/GREEN).
 
 Remove machine / local-environment fingerprints — the things that betray
 *where* the draft was written. Two layers, run in this order:
@@ -30,9 +30,9 @@ It detects and, on `apply`, replaces with a category placeholder:
 | Category | Placeholder | Examples |
 |----------|-------------|----------|
 | Absolute / home / machine paths | `[PATH]` | `/Users/<name>/...`, `~/...`, `C:\Users\<name>\...`, `/tmp`, `/mnt`, `/scratch` |
-| IPv4 addresses | `[IP]` | `192.168.1.1`, `10.0.0.5` (private ranges especially); all redacted |
+| IPv4 addresses | `[IP]` | private ranges (`10.x`, `192.168.x`, …) always; a public quad only with network context (`server`, `ssh`, `:port`). A bare ambiguous quad (`1.2.3.4`) is left for the model — it may be a version string, not an address. |
 | Internal hosts / URLs / ports | `[HOST]` / `[URL]` | `localhost`, `*.local/.internal/.corp/.lan`, `host:8080`, `user@host`, `https://dashboard.internal/...` |
-| Usernames | `[USER]` | a name seen in a path (`/Users/betsy/`) is then redacted anywhere in the text |
+| Usernames | `[USER]` | a login in a `/Users/` or `/home/` path is redacted everywhere it recurs. Logins in *other* paths (`/scratch/<user>`) or recurring in a public URL (`github.com/<user>/…`) are the **model pass's** job — deterministic harvest there would redact common words (`/scratch/shared`). |
 
 It deliberately does **not** flag clearly-public URLs (arxiv, doi.org, github,
 pypi, huggingface, …) or bare common binaries (`/usr/bin/python`), and uses

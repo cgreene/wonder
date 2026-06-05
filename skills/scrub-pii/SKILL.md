@@ -5,7 +5,7 @@ description: Use within /wonder to remove personal information from a draft wond
 
 # scrub-pii  (slice B)
 
-> Identifier script: **implemented**. Model-judgment pass: scaffold.
+> Identifier script: **implemented**. Model-judgment pass: **validated** (RED/GREEN).
 
 Remove personal information about people who haven't consented to be shared.
 The guiding principle is **consent**: the user is free to name *themselves*
@@ -64,7 +64,9 @@ identifying role ("the only crystallographer at $TINY_INSTITUTE").
 - **Is this the user themselves?** Keep it as a *candidate* and surface it at
   the review gate — the user owns their own identity and may want it in the
   profile (cf. the ORCID stretch goal in the README). Do not silently strip the
-  user's name; flag it so they decide.
+  user's name; flag it so they decide. Run this pass over the **original** draft,
+  not Layer 1's placeholder output — once the user's own and a third party's ORCID
+  both become `[ORCID]`, you can no longer tell them apart.
 - **Is this a third party?** Generalize unless the user has explicitly
   confirmed that person consented. Default is to *drop the identity and keep the
   relevance*: "Dr. Lena Hoffmann at the ESRF synchrotron" → "a collaborator".

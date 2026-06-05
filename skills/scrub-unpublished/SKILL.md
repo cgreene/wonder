@@ -5,7 +5,7 @@ description: Use within /wonder to remove pre-publication and proprietary scient
 
 # scrub-unpublished  (slice B)
 
-> Filter list: **implemented**. Model-judgment pass: scaffold.
+> Filter list: **implemented**. Model-judgment pass: **validated** (RED/GREEN).
 
 Remove anything that would burn priority or breach IP/NDA if shared. Two layers,
 run in this order:
