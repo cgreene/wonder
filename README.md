@@ -12,7 +12,7 @@ on the same thing.
 
 > **Status: working MVP, deployed.** `/wonder` runs end-to-end against a hosted
 > OhWow MCP server (on Railway), creating/joining real Discord rooms. Install it
-> from `ohwow.science/install`. See the live walkthrough just below.
+> from **[ohwow.science](https://www.ohwow.science)**. See the live walkthrough just below.
 
 ## The idea
 
